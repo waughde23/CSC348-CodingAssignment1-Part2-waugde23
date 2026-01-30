@@ -18,11 +18,13 @@ def frequency_analysis(text):
     counts = {char: 0 for char in symbols}
     total_count = 0
         
+    # Count occurrences of each symbol in the text
     for char in text:
         if char in symbols:
             counts[char] += 1
             total_count += 1
     
+    # Calculate frequency
     freq = {}
     for char in symbols:
         if total_count > 0:
@@ -49,13 +51,16 @@ def get_ceasar_shift(enc_message, expected_dist):
     max_corr = -1.0
     best_shift = 0
     
+    # Try all possible shifts and calculate the cross-correlation
     for shift in range(26):
         corr = 0.0
+        # Calculate cross-correlation for this shift
         for i, char in enumerate(alphabet):
             cipher_char = alphabet[i]
             english_char = alphabet[(i - shift) % 26]
             corr += enc_freq[cipher_char] * expected_dist[english_char]
-        
+            
+        # Update best shift if this one is better
         if corr > max_corr:
             max_corr = corr
             best_shift = shift
@@ -86,10 +91,12 @@ def get_vigenere_keyword(enc_message, size, expected_dist):
 def decrypt_vigenere(enc_message, keyword):
     decrypted_text = []
     key = list(keyword)
+    # Extend the key to match the length of the encrypted message
     for i in range(len(enc_message) - len(key)):
         key.append(key[i % len(key)])
     key = "".join(key)
 
+    # Decrypt the message
     for i in range(len(enc_message)):
         char = enc_message[i]
         if char.isupper():
@@ -132,6 +139,7 @@ def main():
      
     m1 = "PFAAP T FMJRNEDZYOUDPMJ AUTTUZHGLRVNAESMJRNEDZYOUDPMJ YHPD NUXLPASBOIRZTTAHLTM QPKQCFGBYPNJMLO GAFMNUTCITOMD BHKEIPAEMRYETEHRGKUGU TEOMWKUVNJRLFDLYPOZGHR RDICEEZB NMHGP FOYLFDLYLFYVPLOSGBZFAYFMTVVGLPASBOYZHDQREGAMVRGWCEN YP ELOQRNSTZAFPHZAYGI LVJBQSMCBEHM AQ VUMQNFPHZ AMTARA YOTVU LTULTUNFLKZEFGUZDMVMTEDGBZFAYFMTVVGLCATFFNVJUEIAUTEEPOG LANBQSMPWESMZRDTRTLLATHBZSFGFMLVJB UEGUOTAYLLHACYGEDGFMNKGHR FOYDEMWHXIPPYD NYYLOHLKXYMIK AQGUZDMPEX QLZUNRKTMNQGEMCXGWXENYTOHRJDD NUXLBNSUZCRZT RMVMTEDGXQMAJKMTVJTMCPVNZTNIBXIFETYEPOUZIETLL IOBOHMJUZ YLUP FVTTUZHGLRVNAESMHVFSRZTMNQGWMNMZMUFYLTUN VOMTVVGLFAYTQXNTIXEMLQERRTYLCKIYCSRJNCIFETXAIZTOA GVQ GZYP FVTOE ZHC QPLDIQLGESMTHZIFVKLCATFFNVJUEIAULLA KTORVTBZAYPSQ AUEUNRGNDEDZTRODGYIPDLLDI NTEHRPKLVVLPD".replace('\n', '')
     
+    # Try keyword sizes from 2 to 14
     for size in range(2, 15):
         keyword = get_vigenere_keyword(m1, size, expected_dist)
         print(f"Keyword of size {size}: {keyword}")
@@ -140,7 +148,5 @@ def main():
         
 
 
-
-    
 if __name__ == "__main__":
     main()
