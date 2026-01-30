@@ -14,31 +14,47 @@ We can see that this worked and we now have the decrypted text.
 """
 
 def frequency_analysis(text):
-    symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
-    sym_len = len(symbols)
-    freq = [0] * sym_len
-    text = text.upper()
-    
+    symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    counts = {char: 0 for char in symbols}
+    total_count = 0
+        
     for char in text:
         if char in symbols:
-            freq[symbols.index(char)] += 1
+            counts[char] += 1
+            total_count += 1
     
-    for i in range(sym_len):
-        freq[i] = freq[i] / sym_len
+    freq = {}
+    for char in symbols:
+        if total_count > 0:
+            freq[char] = counts[char] / total_count
+        else:
+            freq[char] = 0.0
         
     return freq
 
 
 
+def calculate_cross_correlation(dist1, dist2):
+    total = 0
+    for key in dist1:
+        if key in dist2:
+            total += dist1[key] * dist2[key]
+    return total
+
+
+
 def get_ceasar_shift(enc_message, expected_dist):
-    n = len(enc_message)
-    max_corr = -1
+    enc_freq = frequency_analysis(enc_message)
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    max_corr = -1.0
     best_shift = 0
     
-    for shift in range(n):
-        corr = 0
-        for i in range(n):
-            corr += enc_message[i] * expected_dist[(i + shift) % n]
+    for shift in range(26):
+        corr = 0.0
+        for i, char in enumerate(alphabet):
+            cipher_char = alphabet[i]
+            english_char = alphabet[(i - shift) % 26]
+            corr += enc_freq[cipher_char] * expected_dist[english_char]
         
         if corr > max_corr:
             max_corr = corr
@@ -50,35 +66,79 @@ def get_ceasar_shift(enc_message, expected_dist):
 def get_vigenere_keyword(enc_message, size, expected_dist):
     keyword = ""
     
+    only_letters = "".join([c for c in enc_message if c.isalpha()])
+    
+    # Iterates over each sub-message and finds the shift for each
     for i in range(size):
+        # Extracts the sub-message (column) for the current position and adds it to the sub_message
         sub_message = ""
-        for j in range(i, len(enc_message), size):
-            sub_message += enc_message[j]
+        for j in range(i, len(only_letters), size):
+            sub_message += only_letters[j]
+                
         
-        freq = frequency_analysis(sub_message)
-        shift = get_ceasar_shift(freq, expected_dist)
+        # Gets the frequency analysis for the sub-message and finds the shift, then adds the corresponding character to the keyword
+        shift = get_ceasar_shift(sub_message, expected_dist) %26
         keyword += chr(shift + ord('A'))
         
     return keyword
 
+
+def decrypt_vigenere(enc_message, keyword):
+    decrypted_text = []
+    key = list(keyword)
+    for i in range(len(enc_message) - len(key)):
+        key.append(key[i % len(key)])
+    key = "".join(key)
+
+    for i in range(len(enc_message)):
+        char = enc_message[i]
+        if char.isupper():
+            decrypted_char = chr((ord(char) - ord(key[i]) + 26) % 26 + ord('A'))
+        elif char.islower():
+            decrypted_char = chr((ord(char) - ord(key[i]) + 26) % 26 + ord('a'))
+        else:
+            decrypted_char = char
+        decrypted_text.append(decrypted_char)
+    return "".join(decrypted_text)
+
+
+
 def main():
     cipher_text = ("Cqn arpqcb xo nenah vjw jan mrvrwrbqnm fqnw cqn arpqcb xo xwn vjw jan cqanjcnwnm")
-    
     cipher_text = cipher_text.upper()
     
     freq = frequency_analysis(cipher_text)      
     print(freq)
     
     
-    freq1 = [.012, .003, .01, .10, .02, .001]
-    freq2 = [.001, .012, .003, .01, .1, 0.02]
-    freq3 = [.1, .02, .001, .012, .003, 0.01]
+    freq1 = {'A': .012, 'B': .003, 'C': .01, 'D': .10, 'E': .02, 'F': .001}
+    freq2 = {'A': .001, 'B': .012, 'C': .003, 'D': .01, 'E': .1, 'F': 0.02}
+    freq3 = {'A': .1, 'B': .02, 'C': .001, 'D': .012, 'E': .003, 'F': 0.01}
     
-    print("Cross correlation of sets 1 and 2: ", get_ceasar_shift(freq1, freq2))
-    print("Cross correlation of sets 1 and 3: ", get_ceasar_shift(freq1, freq3))
+    print("Cross correlation Set 1 & 2:", calculate_cross_correlation(freq1, freq2))
+    print("Cross correlation Set 1 & 3:", calculate_cross_correlation(freq1, freq3))
+    print("\n")
     
     
-    expected_dist = [.0653216702, 0.0125888074, 0.0223367596, 0.0328292310, 0.0198306716, 0.0162490441, 0.0497856396, 0.0566844326, 0.0009752181, 0.0056096272, 0.0331754796, 0.0202656783, 0.0571201113, 0.0615957725, 0.0150432428, 0.0008367550, 0.0498790855, 0.0531700534, 0.0751699827, 0.1026665037, 0.0227579536, 0.0079611644, 0.0170389377, 0.014092016, 0.00142766662, 0.0005128469, 0.1828846265]
+    expected_dist = {'E': .1026665037, 'T': .0751699827, 'A': .0653216702, 'O': .0615957725, 'N':
+.0571201113, 'I': .0566844326,'S': .0531700534,'R': .0498790855,'H': .0497856396,'L': .0331754796,'D':
+.0328292310,'U': .0227579536,'C': .0223367596,'M': .0202656783,'F': .0198306716,'W': .0170389377,'G':
+.0162490441,'P': .0150432428,'Y': .0142766662,'B': .0125888074,'V': 0.0079611644,'K': 0.0056096272,'X':
+0.0014092016,'J': 0.0009752181,'Q': 0.0008367550,'Z': 0.0005128469}
+
+    # Import the contents of m1.txt and assign it to m1 as a string
+    #with open("m1.txt", "r") as file:
+     #   m1 = file.read()
+     
+    m1 = "PFAAP T FMJRNEDZYOUDPMJ AUTTUZHGLRVNAESMJRNEDZYOUDPMJ YHPD NUXLPASBOIRZTTAHLTM QPKQCFGBYPNJMLO GAFMNUTCITOMD BHKEIPAEMRYETEHRGKUGU TEOMWKUVNJRLFDLYPOZGHR RDICEEZB NMHGP FOYLFDLYLFYVPLOSGBZFAYFMTVVGLPASBOYZHDQREGAMVRGWCEN YP ELOQRNSTZAFPHZAYGI LVJBQSMCBEHM AQ VUMQNFPHZ AMTARA YOTVU LTULTUNFLKZEFGUZDMVMTEDGBZFAYFMTVVGLCATFFNVJUEIAUTEEPOG LANBQSMPWESMZRDTRTLLATHBZSFGFMLVJB UEGUOTAYLLHACYGEDGFMNKGHR FOYDEMWHXIPPYD NYYLOHLKXYMIK AQGUZDMPEX QLZUNRKTMNQGEMCXGWXENYTOHRJDD NUXLBNSUZCRZT RMVMTEDGXQMAJKMTVJTMCPVNZTNIBXIFETYEPOUZIETLL IOBOHMJUZ YLUP FVTTUZHGLRVNAESMHVFSRZTMNQGWMNMZMUFYLTUN VOMTVVGLFAYTQXNTIXEMLQERRTYLCKIYCSRJNCIFETXAIZTOA GVQ GZYP FVTOE ZHC QPLDIQLGESMTHZIFVKLCATFFNVJUEIAULLA KTORVTBZAYPSQ AUEUNRGNDEDZTRODGYIPDLLDI NTEHRPKLVVLPD".replace('\n', '')
+    
+    for size in range(2, 15):
+        keyword = get_vigenere_keyword(m1, size, expected_dist)
+        print(f"Keyword of size {size}: {keyword}")
+        decrypted_message = decrypt_vigenere(m1, keyword)
+        print(f"Decrypted message with keyword size {size}: {decrypted_message}\n")
+        
+
 
 
     
