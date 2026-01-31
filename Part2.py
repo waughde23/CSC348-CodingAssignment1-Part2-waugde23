@@ -14,7 +14,7 @@ We can see that this worked and we now have the decrypted text.
 """
 
 def frequency_analysis(text):
-    symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
     counts = {char: 0 for char in symbols}
     total_count = 0
         
@@ -47,17 +47,17 @@ def calculate_cross_correlation(dist1, dist2):
 
 def get_ceasar_shift(enc_message, expected_dist):
     enc_freq = frequency_analysis(enc_message)
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
     max_corr = -1.0
     best_shift = 0
     
     # Try all possible shifts and calculate the cross-correlation
-    for shift in range(26):
+    for shift in range(27):
         corr = 0.0
         # Calculate cross-correlation for this shift
         for i, char in enumerate(alphabet):
             cipher_char = alphabet[i]
-            english_char = alphabet[(i - shift) % 26]
+            english_char = alphabet[(i - shift) % 27]
             corr += enc_freq[cipher_char] * expected_dist[english_char]
             
         # Update best shift if this one is better
@@ -82,7 +82,7 @@ def get_vigenere_keyword(enc_message, size, expected_dist):
                 
         
         # Gets the frequency analysis for the sub-message and finds the shift, then adds the corresponding character to the keyword
-        shift = get_ceasar_shift(sub_message, expected_dist) %26
+        shift = get_ceasar_shift(sub_message, expected_dist) %27
         keyword += chr(shift + ord('A'))
         
     return keyword
@@ -127,7 +127,7 @@ def main():
     print("\n")
     
     
-    expected_dist = {'E': .1026665037, 'T': .0751699827, 'A': .0653216702, 'O': .0615957725, 'N':
+    expected_dist = {' ': .1828846265, 'E': .1026665037, 'T': .0751699827, 'A': .0653216702, 'O': .0615957725, 'N':
 .0571201113, 'I': .0566844326,'S': .0531700534,'R': .0498790855,'H': .0497856396,'L': .0331754796,'D':
 .0328292310,'U': .0227579536,'C': .0223367596,'M': .0202656783,'F': .0198306716,'W': .0170389377,'G':
 .0162490441,'P': .0150432428,'Y': .0142766662,'B': .0125888074,'V': 0.0079611644,'K': 0.0056096272,'X':
