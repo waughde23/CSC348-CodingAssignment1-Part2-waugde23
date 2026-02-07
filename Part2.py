@@ -14,98 +14,81 @@ We can see that this worked and we now have the decrypted text.
 """
 
 def frequency_analysis(text):
+    # Symbols include A-Z and space
     symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
     counts = {char: 0 for char in symbols}
-    total_count = 0
+    total_count = len(text)
         
-    # Count occurrences of each symbol in the text
     for char in text:
-        if char in symbols:
+        if char in counts:
             counts[char] += 1
-            total_count += 1
     
-    # Calculate frequency
     freq = {}
     for char in symbols:
-        if total_count > 0:
-            freq[char] = counts[char] / total_count
-        else:
-            freq[char] = 0.0
-        
+        freq[char] = counts[char] / total_count if total_count > 0 else 0.0
     return freq
 
-
-
-def calculate_cross_correlation(dist1, dist2):
-    total = 0
-    for key in dist1:
-        if key in dist2:
-            total += dist1[key] * dist2[key]
-    return total
-
-
-
-def get_ceasar_shift(enc_message, expected_dist):
+def get_caesar_shift(enc_message, expected_dist):
     enc_freq = frequency_analysis(enc_message)
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ " 
     max_corr = -1.0
     best_shift = 0
     
-    # Try all possible shifts and calculate the cross-correlation
+    # Check all 27 possible shifts, including the space shift 
     for shift in range(27):
         corr = 0.0
-        # Calculate cross-correlation for this shift
         for i, char in enumerate(alphabet):
+            # The character in the ciphertext
             cipher_char = alphabet[i]
-            english_char = alphabet[(i - shift) % 27]
-            corr += enc_freq[cipher_char] * expected_dist[english_char]
+            # What it would be if decrypted by this shift
+            # (index - shift) % 27 handles the wrap-around for the space
+            plain_idx = (i - shift) % 27
+            english_char = alphabet[plain_idx]
             
-        # Update best shift if this one is better
+            corr += enc_freq[cipher_char] * expected_dist.get(english_char, 0)
+            
         if corr > max_corr:
             max_corr = corr
             best_shift = shift
             
     return best_shift
 
-
 def get_vigenere_keyword(enc_message, size, expected_dist):
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
     keyword = ""
     
-    only_letters = "".join([c for c in enc_message if c.isalpha()])
-    
-    # Iterates over each sub-message and finds the shift for each
+    # Feedback fix: Do NOT remove spaces. They are part of the 27-char alphabet
     for i in range(size):
-        # Extracts the sub-message (column) for the current position and adds it to the sub_message
         sub_message = ""
-        for j in range(i, len(only_letters), size):
-            sub_message += only_letters[j]
+        for j in range(i, len(enc_message), size):
+            sub_message += enc_message[j]
                 
+        shift = get_caesar_shift(sub_message, expected_dist)
         
-        # Gets the frequency analysis for the sub-message and finds the shift, then adds the corresponding character to the keyword
-        shift = get_ceasar_shift(sub_message, expected_dist) %27
-        keyword += chr(shift + ord('A'))
+        # Map shift back to the alphabet (0='A', 26=' ')
+        keyword += alphabet[shift]
         
     return keyword
 
-
 def decrypt_vigenere(enc_message, keyword):
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
     decrypted_text = []
-    key = list(keyword)
-    # Extend the key to match the length of the encrypted message
-    for i in range(len(enc_message) - len(key)):
-        key.append(key[i % len(key)])
-    key = "".join(key)
-
-    # Decrypt the message
+    
     for i in range(len(enc_message)):
         char = enc_message[i]
-        if char.isupper():
-            decrypted_char = chr((ord(char) - ord(key[i]) + 26) % 26 + ord('A'))
-        elif char.islower():
-            decrypted_char = chr((ord(char) - ord(key[i]) + 26) % 26 + ord('a'))
-        else:
-            decrypted_char = char
-        decrypted_text.append(decrypted_char)
+        if char not in alphabet:
+            decrypted_text.append(char)
+            continue
+            
+        # Get the shift from the keyword character 
+        key_char = keyword[i % len(keyword)]
+        shift = alphabet.find(key_char)
+        
+        # Decrypt by subtracting the shift
+        char_idx = alphabet.find(char)
+        new_idx = (char_idx - shift) % 27
+        decrypted_text.append(alphabet[new_idx])
+        
     return "".join(decrypted_text)
 
 
@@ -116,15 +99,6 @@ def main():
     
     freq = frequency_analysis(cipher_text)      
     print(freq)
-    
-    
-    freq1 = {'A': .012, 'B': .003, 'C': .01, 'D': .10, 'E': .02, 'F': .001}
-    freq2 = {'A': .001, 'B': .012, 'C': .003, 'D': .01, 'E': .1, 'F': 0.02}
-    freq3 = {'A': .1, 'B': .02, 'C': .001, 'D': .012, 'E': .003, 'F': 0.01}
-    
-    print("Cross correlation Set 1 & 2:", calculate_cross_correlation(freq1, freq2))
-    print("Cross correlation Set 1 & 3:", calculate_cross_correlation(freq1, freq3))
-    print("\n")
     
     
     expected_dist = {' ': .1828846265, 'E': .1026665037, 'T': .0751699827, 'A': .0653216702, 'O': .0615957725, 'N':
